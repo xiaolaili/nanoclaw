@@ -215,12 +215,20 @@ function buildVolumeMounts(
  * Secrets are never written to disk or mounted as files.
  */
 function readSecrets(): Record<string, string> {
-  return readEnvFile([
+  const secrets = readEnvFile([
     'CLAUDE_CODE_OAUTH_TOKEN',
     'ANTHROPIC_API_KEY',
     'ANTHROPIC_BASE_URL',
     'ANTHROPIC_AUTH_TOKEN',
+    'ANTHROPIC_MODEL',
   ]);
+  // When using a non-Anthropic base URL, drop the OAuth token so the SDK
+  // uses ANTHROPIC_API_KEY against the custom endpoint instead.
+  const baseUrl = secrets['ANTHROPIC_BASE_URL'];
+  if (baseUrl && !baseUrl.includes('anthropic.com')) {
+    delete secrets['CLAUDE_CODE_OAUTH_TOKEN'];
+  }
+  return secrets;
 }
 
 function buildContainerArgs(
